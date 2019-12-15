@@ -7,7 +7,7 @@
 #   graphs with Goodman Bacon weights on x axis and Coefficients on y axis
 ###################################################################################
 #Set working directory to where the files are
-setwd("C:/Users/Pat C/Box/_My Documents/Active/Class/Statistical Computing/Project")
+#setwd("C:/Users/Pat C/Box/_My Documents/Active/Class/Statistical Computing/Project")
 
 #Define the necessary functions- the main function is called bacon
 bacon = function(outcome,post,treat,post_treat,place,time, cluster, st_errors='stata',output_path = getwd()){
@@ -25,7 +25,7 @@ bacon = function(outcome,post,treat,post_treat,place,time, cluster, st_errors='s
   }
   
   lmr = lm_robust(outcome~post_treat, fixed_effects = ~place + time, clusters = cluster, se_type = st_errors)
-  pro = proportions(place,outcome,time)
+  pro = proportions(place,outcome,time,post)
   weight = weights_bacon(pro[1],pro[2],pro[3],pro[4],pro[5],pro[6],pro[7],pro[8:1007])
   diff = dd(outcome,place,time,post_treat)
   
@@ -34,7 +34,7 @@ bacon = function(outcome,post,treat,post_treat,place,time, cluster, st_errors='s
   abline(h=0,lty=2,lwd=2)
   dev.off()
   
-  bacon_weights = data.frame(weight,diff,bacon_labels)
+  bacon_weights = data.frame(weight,diff)
   write.csv(bacon_weights,paste(output_path,"/goodman_bacon.csv",sep=""))
   
   return(summary(lmr))
@@ -44,7 +44,7 @@ treatment_timing = function(place_input, place, time, post){
   return(min(subset(time, place==place_input & post==1)))
 }
 
-adjusted_treatment = function(place_input,time_input, place, time){
+adjusted_treatment = function(place_input,time_input, place, time,post_treat){
   grand_mean_treatment = mean(post_treat)
   place_mean = mean(subset(post_treat,place == place_input))
   time_mean = mean(subset(post_treat,time == time_input))
@@ -53,7 +53,7 @@ adjusted_treatment = function(place_input,time_input, place, time){
   return(adjusted_treatment)
 }
 
-proportions = function(place,outcome,time){
+proportions = function(place,outcome,time,post){
   treatment_timing = sapply(place,treatment_timing,place,time,post)
   treatment_timing[treatment_timing == "Inf"] = 3000
   index_treatment = unique(treatment_timing)
@@ -78,7 +78,7 @@ proportions = function(place,outcome,time){
   
   adj_treat = rep(NA,length(df[[1]]))
   for (i in 1:length(df[[1]])){
-    adj_treat[i] = adjusted_treatment(df[i,1],df[i,2], place, time) 
+    adj_treat[i] = adjusted_treatment(df[i,1],df[i,2], place, time, post_treat) 
   }
   
   time_share_early = (max(time)-index_treatment[1]+1)/((max(time)-min(time))+1)
@@ -101,7 +101,7 @@ weights_bacon = function(n_never,n_early,n_late,time_share_early,time_share_late
 }
 
 dd = function(outcome,place,time,post_treat){
-  treatment_timing = sapply(place,treatment_timing)
+  treatment_timing = sapply(place,treatment_timing,place,time,post)
   treatment_timing[treatment_timing == "Inf"] = 3000
   index_treatment = unique(treatment_timing)
   
@@ -133,3 +133,6 @@ dd = function(outcome,place,time,post_treat){
   
   return(c(beta_early_never,beta_late_never,beta_early_cntl,beta_late_cntl))
 }
+
+load("fake_data_project.RData")
+bacon(outcome,post,treat,post_treat,state,year,state)
