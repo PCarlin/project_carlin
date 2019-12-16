@@ -6,7 +6,7 @@
 # Output data: testthat output
 ###################################################################################
 
-setwd("C:/Users/Pat C/Box/_My Documents/Active/Class/Statistical Computing/Project")
+#setwd("C:/Users/Pat C/Box/_My Documents/Active/Class/Statistical Computing/Project")
 
 source('code_carlin_project.R')
 
